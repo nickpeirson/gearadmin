@@ -68,11 +68,26 @@ func TestCanGetStatus(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	want, err := ioutil.ReadFile("testAssets/status.txt")
+	statusResp, err := ioutil.ReadFile("testAssets/status.txt")
 	if err != nil {
 		fmt.Println(err)
 	}
-	if got[0] != string(want[:strings.IndexByte(string(want), '\n')]) {
-		t.Errorf("got %#v want %#v", got[0], string(want[:strings.IndexByte(string(want), '\n')]))
+	want := strings.Split(string(statusResp),"\n")
+	if got[0] != want[0] {
+		t.Errorf("First line: got %#v want %#v", got[0], want[0])
+	}
+	if got[len(got)-1] != want[len(want)-3] { //Strip trailing ".\n" from want
+		t.Errorf("Last line: got %#v want %#v", got[len(got)-1], want[len(want)-3])
+	}
+}
+
+func TestExcludingLines(t *testing.T) {
+	c := setupClient()
+	got, err := c.StatusFiltered(func (line string) bool{ return false })
+	if err != nil {
+		t.Error(err)
+	}
+	if len(got) != 0 {
+		t.Error("Expected no lines, got ", got)
 	}
 }
