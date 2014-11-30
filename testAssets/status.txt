@@ -1,7 +1,7 @@
-aGearmanJob	0	0	1
-aGearmanJob-stale	0	0	10
-anotherGearmanJob	0	0	1
-anotherGearmanJob-stale	0	0	10
-anotherGearmanJob-failed	5	0	0
-lastJob	0	0	3
+F-GearmanJob	6	5	4
+E-GearmanJob-stale	1	6	5
+D-anotherGearmanJob	2	1	6
+C-anotherGearmanJob-stale	3	2	1
+B-anotherGearmanJob-failed	4	3	2
+A-lastJob	5	4	3
 .

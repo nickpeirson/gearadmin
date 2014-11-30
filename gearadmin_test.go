@@ -73,21 +73,33 @@ func TestCanGetStatus(t *testing.T) {
 		fmt.Println(err)
 	}
 	want := strings.Split(string(statusResp),"\n")
-	if got[0] != want[0] {
+	firstLine, _ := NewStatusLine(want[0])
+	if got[0] != firstLine {
 		t.Errorf("First line: got %#v want %#v", got[0], want[0])
 	}
-	if got[len(got)-1] != want[len(want)-3] { //Strip trailing ".\n" from want
+	lastLine, _ := NewStatusLine(want[len(want)-3])
+	if got[len(got)-1] != lastLine { //Strip trailing ".\n" from want
 		t.Errorf("Last line: got %#v want %#v", got[len(got)-1], want[len(want)-3])
 	}
 }
 
 func TestExcludingLines(t *testing.T) {
 	c := setupClient()
-	got, err := c.StatusFiltered(func (line string) bool{ return false })
+	got, err := c.StatusFiltered(func (line StatusLine) bool{ return false })
 	if err != nil {
 		t.Error(err)
 	}
 	if len(got) != 0 {
 		t.Error("Expected no lines, got ", got)
 	}
+}
+
+func TestOrderByName(t *testing.T) {
+	c := setupClient()
+	got, err := c.Status()
+	if err != nil {
+		t.Error(err)
+	}
+	got.Sort("name", false)
+	fmt.Println(got)
 }
