@@ -1,19 +1,19 @@
 package gearadmin_test
 
 import (
-	. "github.com/nickpeirson/gearadmin"
-	"testing"
-	"net"
-	"fmt"
 	"bufio"
+	"fmt"
+	. "github.com/nickpeirson/gearadmin"
 	"io/ioutil"
+	"net"
 	"strings"
+	"testing"
 )
 
 const (
 	testHost = "localhost"
 	testPort = "49151"
-	testAddr = testHost+":"+testPort
+	testAddr = testHost + ":" + testPort
 )
 
 func handleConn(conn net.Conn) {
@@ -25,12 +25,12 @@ func handleConn(conn net.Conn) {
 			fmt.Println("Error", err)
 			continue
 		}
-		resp, err := ioutil.ReadFile("testAssets/"+cmd[:len(cmd)-1]+".txt")
+		resp, err := ioutil.ReadFile("testAssets/" + cmd[:len(cmd)-1] + ".txt")
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		_,_ = writer.Write(resp)
+		_, _ = writer.Write(resp)
 		writer.Flush()
 	}
 }
@@ -72,7 +72,7 @@ func TestCanGetStatus(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	if got[0] != string(want[:strings.IndexByte(string(want),'\n')]) {
-		t.Errorf("got %#v want %#v", got[0], string(want[:strings.IndexByte(string(want),'\n')]))
+	if got[0] != string(want[:strings.IndexByte(string(want), '\n')]) {
+		t.Errorf("got %#v want %#v", got[0], string(want[:strings.IndexByte(string(want), '\n')]))
 	}
 }

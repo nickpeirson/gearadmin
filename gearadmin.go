@@ -1,9 +1,9 @@
 package gearadmin
 
 import (
-	"time"
 	"bufio"
 	"net"
+	"time"
 )
 
 type Client struct {
@@ -12,7 +12,7 @@ type Client struct {
 }
 
 func New(host, port string) Client {
-	return Client{addr:host+":"+port}
+	return Client{addr: host + ":" + port}
 }
 
 func (c *Client) Connect() (err error) {
@@ -42,13 +42,12 @@ func readResponse(conn net.Conn, resp chan string) {
 	close(resp)
 }
 
-
 func (c *Client) sendCmd(cmd string) (err error) {
 	if err = c.Connect(); err != nil {
 		return err
 	}
 	writer := bufio.NewWriter(c.conn)
-	writer.WriteString(cmd+"\n")
+	writer.WriteString(cmd + "\n")
 	err = writer.Flush()
 	return
 }
