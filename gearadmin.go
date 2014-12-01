@@ -2,13 +2,12 @@ package gearadmin
 
 import (
 	"bufio"
+	"errors"
 	"net"
-	"time"
+	"sort"
 	"strconv"
 	"strings"
-	"errors"
-	"sort"
-	"github.com/pmylund/sortutil"
+	"time"
 )
 
 type Client struct {
@@ -23,7 +22,6 @@ type StatusLine struct {
 	Workers string
 }
 
-
 func NewStatusLine(line string) (StatusLine, error) {
 	parts := strings.Fields(line)
 	if len(parts) != 4 {
@@ -35,67 +33,51 @@ func NewStatusLine(line string) (StatusLine, error) {
 type StatusLines []StatusLine
 type By func(l1, l2 *StatusLine) bool
 type StatusLineSorter struct {
-	lines StatusLines
-	by By
+	lines     StatusLines
+	by        By
+	ascending bool
 }
 
-func (a StatusLineSorter) Len() int      { return len(a.lines) }
-func (a StatusLineSorter) Swap(i, j int) { a.lines[i], a.lines[j] = a.lines[j], a.lines[i] }
-func (a StatusLineSorter) Less(i, j int) bool {return a.by(&a.lines[i], &a.lines[j])}
+func (a StatusLineSorter) Len() int           { return len(a.lines) }
+func (a StatusLineSorter) Swap(i, j int)      { a.lines[i], a.lines[j] = a.lines[j], a.lines[i] }
+func (a StatusLineSorter) Less(i, j int) bool { return a.ascending == a.by(&a.lines[i], &a.lines[j]) }
 
-func byName(l1, l2 *StatusLine)  bool {
+func ByName(l1, l2 *StatusLine) bool {
 	return strings.ToLower(l1.Name) < strings.ToLower(l2.Name)
 }
 
-func byQueued(l1, l2 *StatusLine) bool {
+func ByQueued(l1, l2 *StatusLine) bool {
 	l1q, _ := strconv.Atoi(l1.Queued)
 	l2q, _ := strconv.Atoi(l2.Queued)
 	return l1q < l2q
 }
 
-func byRunning(l1, l2 *StatusLine)  bool {
+func ByRunning(l1, l2 *StatusLine) bool {
 	l1r, _ := strconv.Atoi(l1.Running)
 	l2r, _ := strconv.Atoi(l2.Running)
 	return l1r < l2r
 }
 
-func byWorkers(l1, l2 *StatusLine) bool {
+func ByWorkers(l1, l2 *StatusLine) bool {
 	l1w, _ := strconv.Atoi(l1.Workers)
 	l2w, _ := strconv.Atoi(l2.Workers)
 	return l1w < l2w
 }
 
-
-func (sl StatusLines) Sort(field string, ascending bool) {
-	sorter := StatusLineSorter{lines: sl}
-	switch field {
-	case "name":
-		sorter.by = byName
-	case "queued":
-		sorter.by = byQueued
-	case "running":
-		sorter.by = byRunning
-	case "workers":
-		sorter.by = byWorkers
-	}
-	if ascending {
-		sort.Sort(sorter)
-	} else {
-		sortutil.SortReverseInterface(sorter)
-	}
+func (sl StatusLines) Sort(by By, ascending bool) {
+	sort.Sort(StatusLineSorter{sl, by, ascending})
 }
 
 //Given a line ResponseFilter returns true to include or false to exclude
 type StatusLineFilter func(line StatusLine) bool
 
-func nopStatusLineFilter (line StatusLine) bool {
+func nopStatusLineFilter(line StatusLine) bool {
 	return true
 }
 
 func New(host, port string) Client {
 	return Client{addr: host + ":" + port}
 }
-
 
 func (c *Client) Close() {
 	if c.conn != nil {
@@ -115,7 +97,7 @@ func (c *Client) ConnectTimeout(timeout time.Duration) (err error) {
 }
 
 func (c *Client) Connect() (err error) {
-	return c.ConnectTimeout(1*time.Second)
+	return c.ConnectTimeout(1 * time.Second)
 }
 
 func readResponse(conn net.Conn, resp chan string) {
@@ -168,7 +150,7 @@ func (c *Client) StatusFiltered(f StatusLineFilter) (status StatusLines, err err
 		if !f(statusLine) {
 			continue
 		}
-		status = append(status, statusLine) 
+		status = append(status, statusLine)
 	}
 	return
 }

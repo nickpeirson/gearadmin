@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	. "github.com/nickpeirson/gearadmin"
+	"io"
 	"io/ioutil"
 	"net"
 	"strings"
@@ -22,7 +23,10 @@ func handleConn(conn net.Conn) {
 	for {
 		cmd, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println("Error", err)
+			if err == io.EOF {
+				break
+			}
+			fmt.Println("Read error: ", err)
 			continue
 		}
 		resp, err := ioutil.ReadFile("testAssets/" + cmd[:len(cmd)-1] + ".txt")
@@ -47,6 +51,7 @@ func mockGearmand() {
 		go handleConn(conn)
 	}
 }
+
 func init() {
 	go mockGearmand()
 }
@@ -72,7 +77,7 @@ func TestCanGetStatus(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	want := strings.Split(string(statusResp),"\n")
+	want := strings.Split(string(statusResp), "\n")
 	firstLine, _ := NewStatusLine(want[0])
 	if got[0] != firstLine {
 		t.Errorf("First line: got %#v want %#v", got[0], want[0])
@@ -85,7 +90,7 @@ func TestCanGetStatus(t *testing.T) {
 
 func TestExcludingLines(t *testing.T) {
 	c := setupClient()
-	got, err := c.StatusFiltered(func (line StatusLine) bool{ return false })
+	got, err := c.StatusFiltered(func(line StatusLine) bool { return false })
 	if err != nil {
 		t.Error(err)
 	}
@@ -94,12 +99,46 @@ func TestExcludingLines(t *testing.T) {
 	}
 }
 
-func TestOrderByName(t *testing.T) {
+func testSorting(by By, ascending bool, expected StatusLine, t *testing.T) {
 	c := setupClient()
 	got, err := c.Status()
 	if err != nil {
 		t.Error(err)
 	}
-	got.Sort("name", false)
-	fmt.Println(got)
+	got.Sort(by, ascending)
+	if got[0] != expected {
+		t.Errorf("First line: got %#v want %#v", got[0], expected)
+	}
+}
+
+func TestOrderByNameAsc(t *testing.T) {
+	testSorting(ByName, true, StatusLine{"A-lastJob", "5", "4", "3"}, t)
+}
+
+func TestOrderByNameDesc(t *testing.T) {
+	testSorting(ByName, false, StatusLine{"F-GearmanJob", "6", "5", "4"}, t)
+}
+
+func TestOrderByQueuedAsc(t *testing.T) {
+	testSorting(ByQueued, true, StatusLine{"E-GearmanJob-stale", "1", "6", "5"}, t)
+}
+
+func TestOrderByQueuedDesc(t *testing.T) {
+	testSorting(ByQueued, false, StatusLine{"F-GearmanJob", "6", "5", "4"}, t)
+}
+
+func TestOrderByWorkersAsc(t *testing.T) {
+	testSorting(ByWorkers, true, StatusLine{"C-anotherGearmanJob-stale", "3", "2", "1"}, t)
+}
+
+func TestOrderByWorkersDesc(t *testing.T) {
+	testSorting(ByWorkers, false, StatusLine{"D-anotherGearmanJob", "2", "1", "6"}, t)
+}
+
+func TestOrderByRunningAsc(t *testing.T) {
+	testSorting(ByRunning, true, StatusLine{"D-anotherGearmanJob", "2", "1", "6"}, t)
+}
+
+func TestOrderByRunningDesc(t *testing.T) {
+	testSorting(ByRunning, false, StatusLine{"E-GearmanJob-stale", "1", "6", "5"}, t)
 }
