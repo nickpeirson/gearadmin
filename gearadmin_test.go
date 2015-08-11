@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -141,4 +142,19 @@ func TestOrderByRunningAsc(t *testing.T) {
 
 func TestOrderByRunningDesc(t *testing.T) {
 	testSorting(ByRunning, false, StatusLine{"E-GearmanJob-stale", "1", "6", "5"}, t)
+}
+
+func TestMergingStatusLines(t *testing.T) {
+	foo := StatusLine{"foo", "1", "1", "1"}
+	bar := StatusLine{"bar", "1", "1", "1"}
+	bar2 := StatusLine{"bar", "2", "2", "2"}
+	baz := StatusLine{"baz", "1", "1", "1"}
+	sls1 := StatusLines{foo, bar}
+	sls2 := StatusLines{bar, baz}
+	expected := StatusLines{bar2, baz, foo}
+	got := sls1.Merge(sls2)
+	got.Sort(ByName, true)
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Got %#v want %#v", got, expected)
+	}
 }

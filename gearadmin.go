@@ -84,6 +84,11 @@ func (c *Client) Close() {
 		c.conn.Close()
 	}
 }
+
+func (c *Client) ConnectionString() string {
+	return c.addr
+}
+
 func (c *Client) ConnectTimeout(timeout time.Duration) (err error) {
 	if c.conn != nil {
 		return
@@ -153,4 +158,42 @@ func (c *Client) StatusFiltered(f StatusLineFilter) (status StatusLines, err err
 		status = append(status, statusLine)
 	}
 	return
+}
+
+func addStrings(s1 string, s2 string) (string, error) {
+	v1, err := strconv.Atoi(s1)
+	if err != nil {
+		return "", err
+	}
+	v2, err := strconv.Atoi(s2)
+	if err != nil {
+		return "", err
+	}
+	result := strconv.Itoa(v1 + v2)
+	return result, nil
+}
+
+func (lines *StatusLines) Merge(newLines StatusLines) StatusLines {
+	linesMap := make(map[string]StatusLine)
+	for _, line := range *lines {
+		linesMap[line.Name] = line
+	}
+	for _, newLine := range newLines {
+		_, ok := linesMap[newLine.Name]
+		if !ok {
+			linesMap[newLine.Name] = newLine
+			continue
+		}
+		line := linesMap[newLine.Name]
+		line.Queued, _ = addStrings(line.Queued, newLine.Queued)
+		line.Running, _ = addStrings(line.Running, newLine.Running)
+		line.Workers, _ = addStrings(line.Workers, newLine.Workers)
+		linesMap[newLine.Name] = line
+	}
+	resultingLines := make(StatusLines, 0, len(linesMap))
+
+	for _, line := range linesMap {
+		resultingLines = append(resultingLines, line)
+	}
+	return resultingLines
 }
