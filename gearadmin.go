@@ -49,18 +49,27 @@ func ByName(l1, l2 *StatusLine) bool {
 func ByQueued(l1, l2 *StatusLine) bool {
 	l1q, _ := strconv.Atoi(l1.Queued)
 	l2q, _ := strconv.Atoi(l2.Queued)
+	if l1q == l2q {
+		return !ByName(l1, l2)
+	}
 	return l1q < l2q
 }
 
 func ByRunning(l1, l2 *StatusLine) bool {
 	l1r, _ := strconv.Atoi(l1.Running)
 	l2r, _ := strconv.Atoi(l2.Running)
+	if l1r == l2r {
+		return !ByName(l1, l2)
+	}
 	return l1r < l2r
 }
 
 func ByWorkers(l1, l2 *StatusLine) bool {
 	l1w, _ := strconv.Atoi(l1.Workers)
 	l2w, _ := strconv.Atoi(l2.Workers)
+	if l1w == l2w {
+		return !ByName(l1, l2)
+	}
 	return l1w < l2w
 }
 
